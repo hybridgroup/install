@@ -392,7 +392,7 @@ nak(){
 # includes --unsafe-perm hack from https://github.com/c9/core/issues/197
 ptyjs(){
   echo :Installing pty.js
-  "$NPM" install --unsafe-perm pty.js@0.2.8
+  "$NPM" install --unsafe-perm pty.js@0.2.13
 
   HASPTY=`"$C9_DIR/node/bin/node" -e "console.log(require('pty.js'))" | grep createTerminal | wc -l`
   if [ $HASPTY -ne 1 ]; then
