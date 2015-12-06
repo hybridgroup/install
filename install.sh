@@ -44,7 +44,7 @@ start() {
   fi
 
   check_deps
-  
+
   # Try to figure out the os and arch for binary fetching
   local uname="$(uname -a)"
   local os=
@@ -63,21 +63,21 @@ start() {
     *armv6l*) arch=arm-pi ;;
     *armv7l*) arch=arm-pi ;;
   esac
-  
+
   if [ "$arch" == "arm-pi" ]; then
     NODE_VERSION=$NODE_VERSION_ARM_PI
   fi
-  
+
   if [ "$os" != "linux" ] && [ "$os" != "darwin" ]; then
     echo "Unsupported Platform: $os $arch" 1>&2
     exit 1
   fi
-  
+
   if [ "$arch" != "x64" ] && [ "$arch" != "x86" ] && [ "$arch" != "arm-pi" ]; then
     echo "Unsupported Architecture: $os $arch" 1>&2
     exit 1
   fi
-    
+
   case $1 in
     "help" )
       echo
@@ -107,16 +107,16 @@ start() {
       # echo "rhc - RedHat OpenShift"
       # echo "gae - Google AppEngine"
     ;;
-    
+
     "install" )
       shift
-    
+
       # make sure dirs are around
       mkdir -p "$C9_DIR"/bin
       mkdir -p "$C9_DIR"/tmp
       mkdir -p "$C9_DIR"/node_modules
       cd "$C9_DIR"
-    
+
       # install packages
       while [ $# -ne 0 ]
       do
@@ -128,7 +128,7 @@ start() {
         time eval ${1} $os $arch
         shift
       done
-      
+
       # finalize
       pushd "$C9_DIR"/node_modules/.bin
       for FILE in "$C9_DIR"/node_modules/.bin/*; do
@@ -139,16 +139,16 @@ start() {
         fi
       done
       popd
-      
+
       echo $VERSION > "$C9_DIR"/installed
       echo :Done.
     ;;
-    
+
     "base" )
       echo "Installing base packages. Use --help for more options"
       start install node tmux_install nak ptyjs collab
     ;;
-    
+
     * )
       start base
     ;;
@@ -158,7 +158,7 @@ start() {
 check_deps() {
   local ERR
   local OS
-  
+
   if [[ `cat /etc/issue 2>/dev/null` =~ CentOS ]]; then
     OS="CentOS"
   elif [[ `cat /proc/version 2>/dev/null` =~ Ubuntu|Debian ]]; then
@@ -176,7 +176,7 @@ check_deps() {
       ERR=1
     fi
   done
-  
+
   # CentOS
   if [ "$OS" == "CentOS" ]; then
     if ! yum list installed glibc-static >/dev/null 2>&1; then
@@ -185,9 +185,9 @@ check_deps() {
       ERR=1
     fi
   fi
-  
+
   check_python
-  
+
   if [ "$ERR" ]; then exit 1; fi
 }
 
@@ -240,12 +240,12 @@ ensure_local_gyp() {
 }
 
 node(){
-  # clean up 
-  rm -rf node 
+  # clean up
+  rm -rf node
   rm -rf node-$NODE_VERSION*
-  
+
   echo :Installing Node $NODE_VERSION
-  
+
   $DOWNLOAD https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-$1-$2.tar.gz
   tar xzf node-$NODE_VERSION-$1-$2.tar.gz
   mv node-$NODE_VERSION-$1-$2 node
@@ -269,7 +269,7 @@ compile_tmux(){
   make
   echo ":Installing libevent"
   make install
- 
+
   cd "$C9_DIR"
   echo ":Compiling ncurses..."
   tar xzf ncurses-5.9.tar.gz
@@ -281,7 +281,7 @@ compile_tmux(){
   make
   echo ":Installing Ncurses"
   make install
- 
+
   cd "$C9_DIR"
   echo ":Compiling tmux..."
   tar xzf tmux-1.9.tar.gz
@@ -298,7 +298,7 @@ compile_tmux(){
 tmux_download(){
   echo ":Downloading tmux source code"
   echo ":N.B: This will take a while. To speed this up install tmux 1.9 manually on your machine and restart this process."
-  
+
   echo ":Downloading Libevent..."
   $DOWNLOAD https://raw.githubusercontent.com/c9/install/master/packages/tmux/libevent-2.0.21-stable.tar.gz
   echo ":Downloading Ncurses..."
@@ -311,7 +311,7 @@ check_tmux_version(){
   if [ ! -x $1 ]; then
     return 1
   fi
-  tmux_version=$($1 -V | sed -e's/[a-z ]//g')  
+  tmux_version=$($1 -V | sed -e's/[a-z ]//g')
   if [ ! "$tmux_version" ]; then
     return 1
   fi
@@ -329,13 +329,13 @@ tmux_install(){
 
   if check_tmux_version $C9_DIR/bin/tmux; then
     echo ':Existing tmux version is up-to-date'
-  
+
   # If we can support tmux 1.9 or detect upgrades, the following would work:
   elif has "tmux" && check_tmux_version `which tmux`; then
     echo ':A good version of tmux was found, creating a symlink'
     ln -sf $(which tmux) "$C9_DIR"/bin/tmux
     return 0
-  
+
   # If tmux is not present or at the wrong version, we will install it
   else
     if [ $os = "darwin" ]; then
@@ -351,13 +351,13 @@ tmux_install(){
         echo ":Could not find make. Please install make and try again."
         exit 100;
       fi
-    
-      tmux_download  
+
+      tmux_download
       compile_tmux
       ln -sf "$C9_DIR"/local/bin/tmux "$C9_DIR"/bin/tmux
     fi
   fi
-  
+
   if ! check_tmux_version "$C9_DIR"/bin/tmux; then
     echo "Installed tmux does not appear to work:"
     exit 100
@@ -389,10 +389,11 @@ nak(){
   "$NPM" install https://github.com/c9/nak/tarball/c9
 }
 
+# includes --unsafe-perm hack from https://github.com/c9/core/issues/197
 ptyjs(){
   echo :Installing pty.js
-  "$NPM" install pty.js@0.2.8
-  
+  "$NPM" install --unsafe-perm pty.js@0.2.8
+
   HASPTY=`"$C9_DIR/node/bin/node" -e "console.log(require('pty.js'))" | grep createTerminal | wc -l`
   if [ $HASPTY -ne 1 ]; then
     echo "Unknown exception installing pty.js"
@@ -418,28 +419,28 @@ sass(){
 
 typescript(){
   echo :Installing TypeScript
-  "$NPM" install typescript  
+  "$NPM" install typescript
 }
 
 stylus(){
   echo :Installing Stylus
-  "$NPM" install stylus  
+  "$NPM" install stylus
 }
 
 # go(){
-  
+
 # }
 
 # heroku(){
-  
+
 # }
 
 # rhc(){
-  
+
 # }
 
 # gae(){
-  
+
 # }
 
 start $@
